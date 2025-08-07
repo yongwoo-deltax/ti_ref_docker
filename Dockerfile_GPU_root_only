@@ -1,0 +1,31 @@
+ARG REPO_LOCATION=''
+ARG NVHPC_VERSION='23.11'
+ARG CUDA_VERSION='12.3'
+ARG UBUNTU_VERSION='22.04'
+ARG PROXY=none
+FROM ${REPO_LOCATION}nvcr.io/nvidia/nvhpc:${NVHPC_VERSION}-runtime-cuda${CUDA_VERSION}-ubuntu${UBUNTU_VERSION}
+
+
+# baseline
+RUN dpkg --add-architecture i386
+RUN apt-get update
+RUN apt-get install -y lsb-release
+RUN apt-get install -y sudo python3 python3-pip python3-setuptools
+RUN echo "deltax ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers && \
+    chmod 0440 /etc/sudoers 
+
+
+# ubuntu package dependencies
+# libsm6 libxext6 libxrender1 : needed by opencv
+# cmake protobuf-compiler libprotoc-dev : needed by onnx
+# graphviz : needed by tvm
+# swig : needed by model selection tool
+# curl vim git wget gdb : needeed by baseline dev
+RUN bash -c 'apt-get update;\
+             apt-get install -y cmake libprotobuf-dev protobuf-compiler libprotoc-dev graphviz swig curl vim git wget gdb nano zip pkg-config libgtk-3-dev libyaml-cpp-dev;'
+
+
+COPY /mksdboot.sh /root/workspace/images/
+RUN mkdir -p /root/workspace/images/BOOT
+RUN mkdir -p /root/workspace/images/rootfs
+RUN mkdir -p /root/workspace/images/kernelfs
